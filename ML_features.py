@@ -55,8 +55,12 @@ def all_files():
         all_files_list.append(file_name)
     return all_files_list
 
-def register():
+def register(filename):
     for i in speakers:
+        if i in filename:
+            return 'Real'
+        else:
+            return 'Fake'
 
 
 
@@ -77,6 +81,6 @@ with open('mc_features.csv', 'w') as output_file:
         # sent_text = sent_tokenize(text)    THIS MAY BE USED LATER???????
         tok_text = nltk.word_tokenize(text)
         # tag_text = nltk.pos_tag(tok_text)  THIS MAY BE USED LATER???????
-        print(ttr(tok_text), sep=',', file=output_file)
+        print(ttr(tok_text), register(file), sep=',', file=output_file)
 
     print()
