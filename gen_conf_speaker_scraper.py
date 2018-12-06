@@ -1,3 +1,7 @@
+"""This script extracts html code from speakers' pages who have given talks in
+   a LDS General Conference session. The html code will be parsed in another
+   script in order to extract the actual text."""
+
 from bs4 import BeautifulSoup as BS
 import requests as req
 import time
@@ -39,28 +43,34 @@ speakers = ['russell-m-nelson', 'dallin-h-oaks', 'henry-b-eyring',
             'gordon-b-hinckley', 'thomas-s-monson', 'james-e-faust',
             'richard-g-scott']
 
-"""This creates a directory that will contain all the files generated from this 
-script. The top directory folder will be nix_semester_project and under that 
-will be 100_speaker_data and under that will contain the individual folders of 
-each speaker and inside of each of those folders will be a folder called 
-source_data that will hold the .html file and the .txt file."""
-if not os.path.exists(r'nix_semester_project'):
+"""
+This script creates a directory path of folders that will contain all the files
+generated from this script. The user will need to create an initial project 
+folder. The top level directory created by this script is <data>. Under <data> 
+the <100_speaker_data> folder is created which contains folders for each 
+speaker. In each speaker folder there is the <source_data> folder containing 
+all the data of scraped .html code from each speaker's individual lds.org page.  
+"""
+
+# This script may need to be run twice. It may take more than 20 minutes for
+# this script to complete.
+if not os.path.exists(r'data'):
     for i in speakers:
-        os.makedirs(r'nix_semester_project\100_speaker_data\{}\source_data'.format(i))
+        os.makedirs(r'data\100_speaker_data\{}\source_data'.format(i))
 else:
 
-    gen_conf_dictionary = {}  # This may not be used but is here if needed
+    gen_conf_dictionary = {}  # This is used later in the script
 
     lds_website = r'https://www.lds.org'
 
-    """Generate a header"""
+    """Generates a header. The user will need to fill in <NAME> and <EMAIL>."""
     def header():
-        my_header = {'user-agent': 'Michael Nix (nix.byu@gmail.com)'}
+        my_header = {'user-agent': '<NAME> (<EMAIL>)'}
         return my_header
 
 
-    """Extracts all the html from lds.org main page and returns a soup object used
-    by the next function lds_gen_conf_link"""
+    """Extracts all the html from lds.org main page and returns a soup object 
+       used by the next function lds_gen_conf_link"""
     def lds_website_soup(website=lds_website):
         lds_website_response = req.get(website, headers=header())
         lds_website_html_code = lds_website_response.text
@@ -69,7 +79,7 @@ else:
 
 
     """Extracts the link for the general conference page from lds_web_soup and
-    returns the full path to the LDS General Conference page"""
+       returns the full path to the LDS General Conference page"""
     def lds_gen_conf_link(lds_webs_soup=lds_website_soup()):
         links = [all_links for all_links in lds_webs_soup.find_all('a')]
         wanted_links = [link.get('href') for link in links]
@@ -82,9 +92,8 @@ else:
     """lds_gen_conf_website contains the general conference web page link"""
     lds_gen_conf_website = lds_gen_conf_link()
 
-
     """Extracts all the html from the general conference web page and returns a
-    soup object used by the next function all_speakers_link"""
+       soup object used by the next function all_speakers_link"""
     def lds_gen_conf_soup(lds_gen_conf_site=lds_gen_conf_website):
         lds_gen_conf_response = req.get(lds_gen_conf_site, headers=header())
         lds_gen_conf_html_code = lds_gen_conf_response.text
@@ -107,9 +116,8 @@ else:
     """gen_conf_speaker_page contains the direct path to the 'All Speakers' page"""
     gen_conf_speaker_page = lds_website + all_speakers_link()
 
-
     """Extracts all the html from the 'All Speakers' page and returns a soup
-    object used by the next function speaker_main_page"""
+       object used by the next function speaker_main_page"""
     def lds_gen_conf_speaker_soup(gen_conf_speaker_site=gen_conf_speaker_page):
         lds_gen_conf_speaker_response = req.get(gen_conf_speaker_site,
                                                 headers=header())
@@ -120,8 +128,9 @@ else:
 
 
     """Extracts the partial link that points to the main page of each individual
-    speaker. Each partial link is appended to a list containing all the extracted
-    partial links."""
+       speaker. Each partial link is appended to lds_website so to create a 
+       full path. All the full paths are appended to a list that will be 
+       iterated over in a later for loop."""
     def speaker_main_page_link(lds_gen_conf_speaker_page_soup=lds_gen_conf_speaker_soup()):
         links = [all_links for all_links in lds_gen_conf_speaker_page_soup.find_all('a')]
         wanted_links = [link.get('href') for link in links]
@@ -138,8 +147,8 @@ else:
 
 
     """Accesses each speaker's main page and extracts all the html from each
-    speaker's main page. The returned soup is used by the next function
-    speaker_main_page_talk_links()"""
+       speaker's main page. The returned soup is used by the next function
+       speaker_main_page_talk_links()"""
     def speaker_main_page_soup(speaker_link):
         speaker_main_page_response = req.get(speaker_link, headers=header())
         speaker_main_page_html = speaker_main_page_response.text
@@ -161,36 +170,38 @@ else:
 
 
     """This code block fills in the gen_conf_dictionary with each key being the
-    name of the speaker and the values as a list of links to the talks those people
-    have given. The links point to pages housing the individual talks. These pages
-    will have their html scraped and this will be saved locally. The scrapped html
-    code will have the actual talk text in it that will be parsed in another
-    script."""
+       name of the speaker and the values as a list of links to the talks those 
+       people have given. The links point to pages housing the individual talks. 
+       These pages will have their html scraped and this will be saved locally. 
+       The scrapped html code will have the actual talk text in it that will be 
+       parsed in another script."""
     for speaker in speakers:
         for speaker_link in speaker_main_page_link():
             if speaker in speaker_link:
                 talk = speaker_main_page_talk_links(speaker_main_page_soup(speaker_link))
         gen_conf_dictionary[speaker] = talk
 
-    for speaker, talk_link in gen_conf_dictionary.items():
-        print(speaker + '\n\t', talk_link)
-
     """This function extracts the html code from each speaker's individual talk
-    that is located at its own unique page. The html code is saved in
-    source_data with the file name of the <speaker>_talk_0<(#)#>.html, e.g.
-    russell-m-nelson_talk_01.html, jeffrey-r-holland_talk_025.html"""
+       that is located at its own unique page. The html code is saved in 
+       source_data with the file name of the <speaker>_talk_0<(#)#>.html, e.g.
+       russell-m-nelson_talk_01.html, jeffrey-r-holland_talk_025.html. A print 
+       out of the speaker's name and a number will indicate which speaker and 
+       the talk that is being extracted, this is solely for the user to see 
+       what is being done."""
     def html_code_for_each_page():
         talk_page_count = 0
         for speaker, talk_links in gen_conf_dictionary.items():
             for talk in talk_links:
                 talk_page_count += 1
-                with open(r'nix_semester_project\100_speaker_data\{}\source_data\{}_talk_0'.format(speaker, speaker) + str(talk_page_count) + '.html', 'w', encoding='utf-8') as file_out:
+                print(speaker + '\t', talk_page_count)
+                with open(r'data\100_speaker_data\{}\source_data\{}_talk_0'.format(speaker, speaker) +
+                          str(talk_page_count) + '.html', 'w', encoding='utf-8') \
+                        as file_out:
                     time.sleep(3)
                     talk_page_response = req.get(talk, headers=header())
                     talk_page_html_code = talk_page_response.text
                     talk_page_soup = BS(talk_page_html_code, 'html.parser')
                     print(talk_page_soup, file=file_out)
             talk_page_count = 0
-        print(speaker, talk_page_count)
 
     html_code_for_each_page()
