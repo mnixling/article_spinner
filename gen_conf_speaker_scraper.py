@@ -52,8 +52,9 @@ speaker. In each speaker folder there is the <source_data> folder containing
 all the data of scraped .html code from each speaker's individual lds.org page.  
 """
 
-# This script may need to be run twice. It may take more than 20 minutes for
-# this script to complete.
+# This script may need to be run twice. The first run may only build a new top
+# level directory. The second run begin scraping content from the web. It may
+# take more than 20 minutes for this script to complete.
 if not os.path.exists(r'data'):
     for i in speakers:
         os.makedirs(r'data\100_speaker_data\{}\source_data'.format(i))
