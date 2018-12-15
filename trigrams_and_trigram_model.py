@@ -1,6 +1,6 @@
 import nltk
 
-master_txt_file = open('master_txt.txt', 'r', encoding='utf-8').read()
+master_txt_file = open('data\master_text.txt', 'r', encoding='utf-8').read()
 master_txt_file = master_txt_file.splitlines()
 
 """Builds all the trigrams in master.txt. The structure of the trigram is:
